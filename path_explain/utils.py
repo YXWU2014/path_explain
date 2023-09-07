@@ -6,6 +6,7 @@ import os
 import tensorflow as tf
 import numpy as np
 
+
 def set_up_environment(mem_frac=None, visible_devices=None, min_log_level='3'):
     """
     A helper function to set up a tensorflow environment.
@@ -29,11 +30,13 @@ def set_up_environment(mem_frac=None, visible_devices=None, min_log_level='3'):
                     memory_limit = int(10000 * mem_frac)
                     config = [tf.config.experimental.VirtualDeviceConfiguration(
                         memory_limit=memory_limit)]
-                    tf.config.experimental.set_virtual_device_configuration(gpu, config)
+                    tf.config.experimental.set_virtual_device_configuration(
+                        gpu, config)
                 else:
                     tf.config.experimental.set_memory_growth(gpu, True)
         except RuntimeError as error:
             print(error)
+
 
 def softplus_activation(beta=1.0):
     """
@@ -45,10 +48,11 @@ def softplus_activation(beta=1.0):
         beta: The smoothing parameter. Smaller means smoother.
     """
     def softplus(batch_x):
-        return (1.0 / beta) * tf.keras.backend.log(1.0 + \
-               tf.keras.backend.exp(-1.0 * tf.keras.backend.abs(beta * batch_x))) + \
-               tf.keras.backend.maximum(batch_x, 0)
+        return (1.0 / beta) * tf.keras.backend.log(1.0 +
+                                                   tf.keras.backend.exp(-1.0 * tf.keras.backend.abs(beta * batch_x))) + \
+            tf.keras.backend.maximum(batch_x, 0)
     return softplus
+
 
 def _find_sublist(super_list, sub_list):
     """
@@ -59,6 +63,7 @@ def _find_sublist(super_list, sub_list):
         if super_list[i:i+len(sub_list)] == sub_list:
             indices.append([i + j for j in range(len(sub_list))])
     return indices
+
 
 def _find_step_increasing(index_list):
     """
@@ -76,6 +81,7 @@ def _find_step_increasing(index_list):
     indices.append((current_start - 1, index_list[-1] + 1))
     return indices
 
+
 def fold_array(array, join_ranges):
     """
     A helper function to fold a numpy array along certain ranges.
@@ -90,6 +96,7 @@ def fold_array(array, join_ranges):
     array = np.delete(array, delete_slices)
     return array
 
+
 def fold_matrix(array, join_ranges):
     """
     A helper function to fold a number matrix along certain ranges.
@@ -97,8 +104,10 @@ def fold_matrix(array, join_ranges):
     array = array.copy()
     delete_slices = []
     for join_range in join_ranges:
-        array[join_range[0], :] = np.sum(array[join_range[0]:join_range[1], :], axis=0)
-        array[:, join_range[0]] = np.sum(array[:, join_range[0]:join_range[1]], axis=1)
+        array[join_range[0], :] = np.sum(
+            array[join_range[0]:join_range[1], :], axis=0)
+        array[:, join_range[0]] = np.sum(
+            array[:, join_range[0]:join_range[1]], axis=1)
 
         delete_slices.append(np.arange(join_range[0] + 1, join_range[1]))
     delete_slices = np.concatenate(delete_slices, axis=0)
@@ -107,19 +116,22 @@ def fold_matrix(array, join_ranges):
     array = np.delete(array, delete_slices, axis=1)
     return array
 
+
 def fold_tokens(array, join_ranges, join_string='##'):
     """
     A helper function to fold a list of strings along certain ranges.
     """
     delete_slices = []
     for join_range in join_ranges:
-        replace_string = ''.join(list(array[join_range[0]:join_range[1]])).replace(join_string, '')
+        replace_string = ''.join(
+            list(array[join_range[0]:join_range[1]])).replace(join_string, '')
         array[join_range[0]] = replace_string
         delete_slices.append(np.arange(join_range[0] + 1, join_range[1]))
     delete_slices = np.concatenate(delete_slices, axis=0)
 
     array = np.delete(array, delete_slices)
     return array
+
 
 def strip_tokens(tokens,
                  attributions,
@@ -155,13 +167,16 @@ def strip_tokens(tokens,
         interaction = interaction[start_index:end_index, start_index:end_index]
 
         if join_string is not None:
-            join_indices = np.where([t.startswith(join_string) for t in token])[0]
-#             join_indices = np.append(join_indices, join_indices - 1)
+            join_indices = np.where(
+                [t.startswith(join_string) for t in token])[0]
+# join_indices = np.append(join_indices, join_indices - 1)
 
             if special_strings is not None:
                 for special_string in special_strings:
-                    special_string_indices = _find_sublist(token, special_string)
-                    join_indices = np.append(join_indices, special_string_indices)
+                    special_string_indices = _find_sublist(
+                        token, special_string)
+                    join_indices = np.append(
+                        join_indices, special_string_indices)
 
             if len(join_indices) > 0:
                 join_indices = np.sort(np.unique(join_indices)).astype(int)
